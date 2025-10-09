@@ -1,0 +1,41 @@
+/* Gmail AI Assistant Content Styles */
+
+.ai-reply-btn {
+    position: relative;
+    z-index: 9999;
+}
+
+.ai-reply-btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+.ai-assistant-notification {
+    font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
+    z-index: 999999;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Ensure button visibility in Gmail */
+.btC .ai-reply-btn,
+.aDh .ai-reply-btn {
+    display: inline-flex !important;
+    visibility: visible !important;
+}
+
+/* Loading animation for AI button */
+@keyframes aiButtonSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
