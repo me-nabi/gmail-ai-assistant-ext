@@ -47,3 +47,6 @@ pids
 config.local.js
 .env
 .env.local
+
+# Keep template but ignore actual config
+!config.template.js

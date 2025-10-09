@@ -59,11 +59,27 @@ async function loadSettings() {
   try {
     const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
     if (response.success) {
-      currentSettings = response.settings;
-      console.log('Settings loaded:', currentSettings);
+      currentSettings = {
+        ...response.settings,
+        // Ensure defaults if something is missing
+        replyTone: response.settings.replyTone || 'professional',
+        maxTokens: response.settings.maxTokens || 500,
+        temperature: response.settings.temperature || 0.7,
+        customInstructions: response.settings.customInstructions || '',
+        autoReplyEnabled: response.settings.autoReplyEnabled !== false
+      };
+      console.log('Settings loaded and normalized:', currentSettings);
     }
   } catch (error) {
     console.error('Error loading settings:', error);
+    // Set fallback settings
+    currentSettings = {
+      replyTone: 'professional',
+      maxTokens: 500,
+      temperature: 0.7,
+      customInstructions: '',
+      autoReplyEnabled: true
+    };
   }
 }
 
@@ -91,8 +107,17 @@ function handleMessages(request, sender, sendResponse) {
 
 // Setup mutation observer to detect compose windows
 function setupMutationObserver() {
+  let injectionTimeout;
+  let lastInjectionTime = 0;
+  
   const observer = new MutationObserver((mutations) => {
     if (!isExtensionActive) return;
+    
+    // Prevent too frequent injections
+    const now = Date.now();
+    if (now - lastInjectionTime < 1000) { // Minimum 1 second between injections
+      return;
+    }
     
     let shouldInject = false;
     
@@ -113,10 +138,14 @@ function setupMutationObserver() {
     });
     
     if (shouldInject) {
-      // Delay injection to ensure DOM is ready
-      setTimeout(() => {
+      // Clear existing timeout to prevent multiple injections
+      clearTimeout(injectionTimeout);
+      
+      // Delay injection to ensure DOM is ready and debounce multiple calls
+      injectionTimeout = setTimeout(() => {
+        lastInjectionTime = Date.now();
         injectAIButton();
-      }, 300);
+      }, 800);
     }
   });
   
@@ -125,7 +154,7 @@ function setupMutationObserver() {
     subtree: true
   });
   
-  console.log('Mutation observer setup complete');
+  console.log('Mutation observer setup complete with enhanced debouncing');
 }
 
 // Create AI reply button
@@ -181,8 +210,37 @@ function injectAIButton() {
   // Find all compose toolbars
   const toolbars = findElements(GMAIL_SELECTORS.composeToolbar);
   
+  // Only inject into the FIRST visible toolbar to prevent duplicates
+  let injectedCount = 0;
+  
   toolbars.forEach((toolbar, index) => {
-    if (toolbar.querySelector('.ai-reply-btn')) return; // Skip if already exists
+    // Skip if we already injected a button
+    if (injectedCount > 0) {
+      console.log('Already injected button, skipping additional toolbars...');
+      return;
+    }
+    
+    // Double check if button already exists
+    if (toolbar.querySelector('.ai-reply-btn')) {
+      console.log('Button already exists in toolbar, skipping...');
+      return;
+    }
+    
+    // Check if toolbar is visible and valid
+    if (!toolbar.offsetParent && toolbar.offsetWidth === 0) {
+      console.log('Toolbar not visible, skipping...');
+      return;
+    }
+    
+    // Check if this is a real compose toolbar (has send button nearby)
+    const hasValidToolbar = toolbar.closest('[role="dialog"]') || 
+                           toolbar.querySelector('[data-tooltip*="Send"]') ||
+                           toolbar.parentNode.querySelector('[data-tooltip*="Send"]');
+    
+    if (!hasValidToolbar) {
+      console.log('Not a valid compose toolbar, skipping...');
+      return;
+    }
     
     const button = createAIButton();
     button.addEventListener('click', (e) => handleAIButtonClick(e, toolbar));
@@ -194,14 +252,41 @@ function injectAIButton() {
     } else {
       toolbar.appendChild(button);
     }
+    
+    injectedCount++;
+    console.log(`AI button injected into toolbar ${index + 1}`);
   });
   
-  console.log(`AI buttons injected into ${toolbars.length} compose window(s)`);
+  console.log(`Total toolbars found: ${toolbars.length}, buttons injected: ${injectedCount}`);
 }
 
-// Remove all AI buttons
+// Remove all AI buttons more aggressively
 function removeAIButtons() {
-  document.querySelectorAll('.ai-reply-btn').forEach(btn => btn.remove());
+  // Remove by class
+  const existingButtons = document.querySelectorAll('.ai-reply-btn');
+  console.log(`Removing ${existingButtons.length} existing AI buttons by class`);
+  existingButtons.forEach(btn => {
+    btn.removeEventListener('click', handleAIButtonClick);
+    btn.remove();
+  });
+  
+  // Also remove any buttons with "AI Reply" text
+  const allButtons = document.querySelectorAll('div[role="button"], button');
+  allButtons.forEach(btn => {
+    if (btn.textContent && btn.textContent.includes('AI Reply')) {
+      console.log('Removing AI Reply button by text content');
+      btn.remove();
+    }
+  });
+  
+  // Remove any buttons with AI Reply SVG icon
+  const svgButtons = document.querySelectorAll('div:has(svg) + div');
+  svgButtons.forEach(btn => {
+    if (btn.textContent && btn.textContent.includes('AI Reply')) {
+      console.log('Removing AI Reply button with SVG');
+      btn.parentElement?.remove();
+    }
+  });
 }
 
 // Handle AI button click
@@ -222,22 +307,22 @@ async function handleAIButtonClick(event, toolbar) {
   // Get email content for context
   const emailContent = getEmailContentForReply();
   
-  if (!emailContent && !currentSettings.allowEmptyContext) {
-    showNotification('No email context found. Please open an email thread first.', 'warning');
-    return;
-  }
-  
   try {
     // Update button state
     updateButtonState(button, 'loading');
     
-    // Generate reply
-    const reply = await generateReply(emailContent || 'Generate a professional email response.');
+    // Load fresh settings before generating reply
+    await loadSettings();
+    
+    console.log('Using settings for AI reply:', currentSettings);
+    
+    // Generate reply with current settings
+    const reply = await generateReply(emailContent || 'Generate a professional email response.', currentSettings);
     
     if (reply) {
       // Insert reply into compose area
       insertTextIntoCompose(composeArea, reply);
-      showNotification('AI reply generated successfully!', 'success');
+      showNotification(`AI reply generated with ${currentSettings.replyTone} tone!`, 'success');
     } else {
       throw new Error('Empty response from AI');
     }
@@ -265,12 +350,14 @@ function findNearestComposeArea(toolbar) {
 }
 
 // Generate reply using background script
-async function generateReply(emailContent) {
+async function generateReply(emailContent, settings = currentSettings) {
   try {
+    console.log('Sending request with settings:', settings);
+    
     const response = await chrome.runtime.sendMessage({
       action: 'generateReply',
       emailContent: emailContent,
-      settings: currentSettings
+      settings: settings
     });
     
     if (response.success) {
