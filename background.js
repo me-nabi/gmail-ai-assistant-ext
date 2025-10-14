@@ -3,8 +3,8 @@ console.log('Gmail AI Assistant Background Script Loaded');
 
 // Configuration for Gemini AI API (Updated to new format)
 const GEMINI_CONFIG = {
-  apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-  model: 'gemini-2.0-flash-exp'
+  apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+  model: 'gemini-pro'
 };
 
 // Store API key and user settings

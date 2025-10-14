@@ -1,572 +1,579 @@
-// Gmail AI Assistant Content Script
-console.log('Gmail AI Assistant Content Script Loaded');
+// Gmail AI Assistant Content Script - Safe Version
+console.log('Gmail AI Assistant loaded - Safe version');
 
-// Gmail selectors and utilities
-const GMAIL_SELECTORS = {
-  // Compose window elements
-  composeWindows: ['.aDh', '.btC', '[role="dialog"]', '.dw'],
-  composeToolbar: ['.btC', '.aDh', '[role="toolbar"]', '.gU.Up', '.Am.Al.editable'],
-  composeTextArea: [
-    '[role="textbox"][g_editable="true"]', 
-    '.Am.Al.editable [g_editable="true"]',
-    '.editable[role="textbox"]',
-    'div[contenteditable="true"][role="textbox"]'
-  ],
-  
-  // Email content elements
-  emailContent: [
-    '.h7', 
-    '.a3s.aiL', 
-    '.ii.gt .a3s.aiL',
-    '.gmail_quote',
-    '[role="listitem"] .a3s'
-  ],
-  
-  // Reply/Forward context
-  replyContext: ['.h7', '.adP', '.adO'],
-  
-  // Send button
-  sendButton: ['.T-I.J-J5-Ji.aoO.v7.T-I-atl.L3', '[role="button"][data-tooltip*="Send"]']
-};
+(function() {
+  'use strict';
 
-// Extension state
-let isExtensionActive = true;
-let currentSettings = {};
+  // Extension state
+  let isExtensionActive = true;
+  let currentSettings = {};
 
-// Initialize extension
-initialize();
+  // Gmail selectors (minimal set)
+  const GMAIL_SELECTORS = {
+    composeToolbar: ['.btC', '.aDh', '[role="toolbar"]'],
+    composeTextArea: ['[role="textbox"][g_editable="true"]']
+  };
 
-async function initialize() {
-  console.log('Initializing Gmail AI Assistant...');
-  
-  // Load settings
-  await loadSettings();
-  
-  // Setup observers
-  setupMutationObserver();
-  
-  // Initial injection (in case compose is already open)
-  setTimeout(() => {
-    injectAIButton();
-  }, 1000);
-  
-  // Listen for messages from background script
-  chrome.runtime.onMessage.addListener(handleMessages);
-}
+  // Available tone options
+  const TONE_OPTIONS = [
+    { id: 'professional', name: 'Professional', icon: '💼', desc: 'Formal' },
+    { id: 'friendly', name: 'Friendly', icon: '😊', desc: 'Warm' },
+    { id: 'casual', name: 'Casual', icon: '👋', desc: 'Relaxed' },
+    { id: 'formal', name: 'Formal', icon: '🎩', desc: 'Official' },
+    { id: 'concise', name: 'Concise', icon: '⚡', desc: 'Brief' }
+  ];
 
-// Load settings from storage
-async function loadSettings() {
-  try {
-    const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
-    if (response.success) {
-      currentSettings = {
-        ...response.settings,
-        // Ensure defaults if something is missing
-        replyTone: response.settings.replyTone || 'professional',
-        maxTokens: response.settings.maxTokens || 500,
-        temperature: response.settings.temperature || 0.7,
-        customInstructions: response.settings.customInstructions || '',
-        autoReplyEnabled: response.settings.autoReplyEnabled !== false
-      };
-      console.log('Settings loaded and normalized:', currentSettings);
-    }
-  } catch (error) {
-    console.error('Error loading settings:', error);
-    // Set fallback settings
-    currentSettings = {
-      replyTone: 'professional',
-      maxTokens: 500,
-      temperature: 0.7,
-      customInstructions: '',
-      autoReplyEnabled: true
-    };
-  }
-}
-
-// Handle messages from background script or popup
-function handleMessages(request, sender, sendResponse) {
-  switch (request.action) {
-    case 'generateReplyFromSelection':
-      handleSelectionReply(request.selectedText);
-      break;
-    
-    case 'refreshSettings':
-      loadSettings();
-      break;
-      
-    case 'toggleExtension':
-      isExtensionActive = request.enabled;
-      if (isExtensionActive) {
-        injectAIButton();
-      } else {
-        removeAIButtons();
-      }
-      break;
-  }
-}
-
-// Setup mutation observer to detect compose windows
-function setupMutationObserver() {
-  let injectionTimeout;
-  let lastInjectionTime = 0;
-  
-  const observer = new MutationObserver((mutations) => {
-    if (!isExtensionActive) return;
-    
-    // Prevent too frequent injections
-    const now = Date.now();
-    if (now - lastInjectionTime < 1000) { // Minimum 1 second between injections
-      return;
-    }
-    
-    let shouldInject = false;
-    
-    mutations.forEach((mutation) => {
-      // Check if new nodes were added
-      mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          // Check if it's a compose window or contains compose elements
-          const isComposeElement = GMAIL_SELECTORS.composeWindows.some(selector => 
-            node.matches && (node.matches(selector) || node.querySelector(selector))
-          );
-          
-          if (isComposeElement) {
-            shouldInject = true;
-          }
-        }
-      });
-    });
-    
-    if (shouldInject) {
-      // Clear existing timeout to prevent multiple injections
-      clearTimeout(injectionTimeout);
-      
-      // Delay injection to ensure DOM is ready and debounce multiple calls
-      injectionTimeout = setTimeout(() => {
-        lastInjectionTime = Date.now();
-        injectAIButton();
-      }, 800);
-    }
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  
-  console.log('Mutation observer setup complete with enhanced debouncing');
-}
-
-// Create AI reply button
-function createAIButton() {
-  const button = document.createElement('div');
-  button.className = 'T-I J-J5-Ji aoO v7 T-I-atl L3 ai-reply-btn';
-  button.style.cssText = `
-    margin-right: 8px;
-    cursor: pointer;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.3s ease;
-  `;
-  
-  button.innerHTML = `
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2L2 7V17L12 22L22 17V7L12 2ZM12 4.5L18.5 7.75L12 11L5.5 7.75L12 4.5ZM4 9.5L11 12.75V19.5L4 16.25V9.5ZM13 12.75L20 9.5V16.25L13 19.5V12.75Z"/>
-    </svg>
-    AI Reply
-  `;
-  
-  button.setAttribute('role', 'button');
-  button.setAttribute('data-tooltip', 'Generate AI Reply');
-  button.setAttribute('title', 'Generate AI Reply');
-  
-  // Hover effects
-  button.addEventListener('mouseenter', () => {
-    button.style.transform = 'translateY(-1px)';
-    button.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-  });
-  
-  button.addEventListener('mouseleave', () => {
-    button.style.transform = 'translateY(0)';
-    button.style.boxShadow = 'none';
-  });
-  
-  return button;
-}
-
-// Inject AI button into compose toolbar
-function injectAIButton() {
-  // Remove existing buttons first
-  removeAIButtons();
-  
-  // Find all compose toolbars
-  const toolbars = findElements(GMAIL_SELECTORS.composeToolbar);
-  
-  // Only inject into the FIRST visible toolbar to prevent duplicates
-  let injectedCount = 0;
-  
-  toolbars.forEach((toolbar, index) => {
-    // Skip if we already injected a button
-    if (injectedCount > 0) {
-      console.log('Already injected button, skipping additional toolbars...');
-      return;
-    }
-    
-    // Double check if button already exists
-    if (toolbar.querySelector('.ai-reply-btn')) {
-      console.log('Button already exists in toolbar, skipping...');
-      return;
-    }
-    
-    // Check if toolbar is visible and valid
-    if (!toolbar.offsetParent && toolbar.offsetWidth === 0) {
-      console.log('Toolbar not visible, skipping...');
-      return;
-    }
-    
-    // Check if this is a real compose toolbar (has send button nearby)
-    const hasValidToolbar = toolbar.closest('[role="dialog"]') || 
-                           toolbar.querySelector('[data-tooltip*="Send"]') ||
-                           toolbar.parentNode.querySelector('[data-tooltip*="Send"]');
-    
-    if (!hasValidToolbar) {
-      console.log('Not a valid compose toolbar, skipping...');
-      return;
-    }
-    
-    const button = createAIButton();
-    button.addEventListener('click', (e) => handleAIButtonClick(e, toolbar));
-    
-    // Insert button at the beginning of toolbar
-    const firstChild = toolbar.firstElementChild;
-    if (firstChild) {
-      toolbar.insertBefore(button, firstChild);
-    } else {
-      toolbar.appendChild(button);
-    }
-    
-    injectedCount++;
-    console.log(`AI button injected into toolbar ${index + 1}`);
-  });
-  
-  console.log(`Total toolbars found: ${toolbars.length}, buttons injected: ${injectedCount}`);
-}
-
-// Remove all AI buttons more aggressively
-function removeAIButtons() {
-  // Remove by class
-  const existingButtons = document.querySelectorAll('.ai-reply-btn');
-  console.log(`Removing ${existingButtons.length} existing AI buttons by class`);
-  existingButtons.forEach(btn => {
-    btn.removeEventListener('click', handleAIButtonClick);
-    btn.remove();
-  });
-  
-  // Also remove any buttons with "AI Reply" text
-  const allButtons = document.querySelectorAll('div[role="button"], button');
-  allButtons.forEach(btn => {
-    if (btn.textContent && btn.textContent.includes('AI Reply')) {
-      console.log('Removing AI Reply button by text content');
-      btn.remove();
-    }
-  });
-  
-  // Remove any buttons with AI Reply SVG icon
-  const svgButtons = document.querySelectorAll('div:has(svg) + div');
-  svgButtons.forEach(btn => {
-    if (btn.textContent && btn.textContent.includes('AI Reply')) {
-      console.log('Removing AI Reply button with SVG');
-      btn.parentElement?.remove();
-    }
-  });
-}
-
-// Handle AI button click
-async function handleAIButtonClick(event, toolbar) {
-  event.preventDefault();
-  event.stopPropagation();
-  
-  const button = event.target.closest('.ai-reply-btn');
-  if (!button) return;
-  
-  // Find the compose text area
-  const composeArea = findNearestComposeArea(toolbar);
-  if (!composeArea) {
-    showNotification('Could not find compose area', 'error');
-    return;
-  }
-  
-  // Get email content for context
-  const emailContent = getEmailContentForReply();
-  
-  try {
-    // Update button state
-    updateButtonState(button, 'loading');
-    
-    // Load fresh settings before generating reply
-    await loadSettings();
-    
-    console.log('Using settings for AI reply:', currentSettings);
-    
-    // Generate reply with current settings
-    const reply = await generateReply(emailContent || 'Generate a professional email response.', currentSettings);
-    
-    if (reply) {
-      // Insert reply into compose area
-      insertTextIntoCompose(composeArea, reply);
-      showNotification(`AI reply generated with ${currentSettings.replyTone} tone!`, 'success');
-    } else {
-      throw new Error('Empty response from AI');
-    }
-    
-  } catch (error) {
-    console.error('Error generating reply:', error);
-    showNotification(`Error: ${error.message}`, 'error');
-  } finally {
-    // Reset button state
-    updateButtonState(button, 'default');
-  }
-}
-
-// Find nearest compose area relative to toolbar
-function findNearestComposeArea(toolbar) {
-  // Look in the same compose window
-  const composeWindow = toolbar.closest('[role="dialog"], .aDh, .dw');
-  if (composeWindow) {
-    const textArea = findElements(GMAIL_SELECTORS.composeTextArea, composeWindow)[0];
-    if (textArea) return textArea;
-  }
-  
-  // Fallback: find any compose area
-  return findElements(GMAIL_SELECTORS.composeTextArea)[0];
-}
-
-// Generate reply using background script
-async function generateReply(emailContent, settings = currentSettings) {
-  try {
-    console.log('Sending request with settings:', settings);
-    
-    const response = await chrome.runtime.sendMessage({
-      action: 'generateReply',
-      emailContent: emailContent,
-      settings: settings
-    });
-    
-    if (response.success) {
-      return response.reply;
-    } else {
-      throw new Error(response.error || 'Failed to generate reply');
-    }
-  } catch (error) {
-    throw new Error(`Communication error: ${error.message}`);
-  }
-}
-
-// Get email content for context
-function getEmailContentForReply() {
-  const contentElements = findElements(GMAIL_SELECTORS.emailContent);
-  
-  let emailText = '';
-  contentElements.forEach(element => {
-    const text = element.innerText || element.textContent || '';
-    if (text.trim()) {
-      emailText += text.trim() + '\n\n';
-    }
-  });
-  
-  // Clean up the text
-  emailText = emailText
-    .replace(/\n{3,}/g, '\n\n')  // Remove excessive line breaks
-    .replace(/^\s+|\s+$/g, '')   // Trim whitespace
-    .substring(0, 3000);         // Limit length
-  
-  console.log('Extracted email content:', emailText.substring(0, 200) + '...');
-  return emailText;
-}
-
-// Insert generated text into compose area
-function insertTextIntoCompose(composeArea, text) {
-  if (!composeArea) return;
-  
-  try {
-    // Focus the compose area
-    composeArea.focus();
-    
-    // Clear existing content if it's just placeholder
-    const existingText = (composeArea.innerText || composeArea.textContent || '').trim();
-    if (!existingText || existingText.length < 10) {
-      composeArea.innerHTML = '';
-    }
-    
-    // Insert text
-    if (composeArea.contentEditable === 'true') {
-      // For contenteditable divs
-      document.execCommand('insertHTML', false, text.replace(/\n/g, '<br>'));
-    } else {
-      // For textareas
-      composeArea.value = text;
-      composeArea.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-    
-    // Trigger change events
-    composeArea.dispatchEvent(new Event('input', { bubbles: true }));
-    composeArea.dispatchEvent(new Event('change', { bubbles: true }));
-    
-  } catch (error) {
-    console.error('Error inserting text:', error);
-    
-    // Fallback: try direct innerHTML
+  // Load settings safely
+  async function loadSettings() {
     try {
-      composeArea.innerHTML = text.replace(/\n/g, '<br>');
-    } catch (e) {
-      console.error('Fallback insertion also failed:', e);
+      const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
+      if (response && response.success) {
+        currentSettings = {
+          ...response.settings,
+          geminiApiKey: response.settings.apiKey || response.settings.geminiApiKey || '',
+          replyTone: response.settings.replyTone || 'professional',
+          maxTokens: response.settings.maxTokens || 500,
+          temperature: response.settings.temperature || 0.7,
+          customInstructions: response.settings.customInstructions || '',
+          autoReplyEnabled: response.settings.autoReplyEnabled !== false
+        };
+        console.log('Settings loaded successfully');
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      currentSettings = {
+        geminiApiKey: '',
+        replyTone: 'professional',
+        maxTokens: 500,
+        temperature: 0.7,
+        customInstructions: '',
+        autoReplyEnabled: true
+      };
     }
   }
-}
 
-// Update button visual state
-function updateButtonState(button, state) {
-  switch (state) {
-    case 'loading':
-      button.style.opacity = '0.7';
-      button.innerHTML = `
-        <div style="width: 14px; height: 14px; border: 2px solid currentColor; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        Generating...
+  // Create AI button with tone dropdown
+  function createAIButton() {
+    try {
+      const container = document.createElement('div');
+      container.className = 'ai-reply-container';
+      container.style.cssText = `
+        margin-right: 8px;
+        position: relative;
+        display: inline-flex;
       `;
-      button.disabled = true;
-      break;
       
-    case 'success':
-      button.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z"/>
-        </svg>
-        Done!
+      // Main button
+      const button = document.createElement('div');
+      button.className = 'T-I J-J5-Ji aoO v7 T-I-atl L3 ai-reply-btn ai-reply-btn-main';
+      button.style.cssText = `
+        cursor: pointer;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
       `;
-      setTimeout(() => updateButtonState(button, 'default'), 2000);
-      break;
       
-    case 'default':
-    default:
-      button.style.opacity = '1';
+      const currentTone = currentSettings.replyTone || 'professional';
+      const toneOption = TONE_OPTIONS.find(t => t.id === currentTone) || TONE_OPTIONS[0];
+      
       button.innerHTML = `
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2L2 7V17L12 22L22 17V7L12 2ZM12 4.5L18.5 7.75L12 11L5.5 7.75L12 4.5ZM4 9.5L11 12.75V19.5L4 16.25V9.5ZM13 12.75L20 9.5V16.25L13 19.5V12.75Z"/>
         </svg>
-        AI Reply
+        <span>AI Reply</span>
+        <span class="ai-current-tone">(${toneOption.name})</span>
+        <svg class="ai-dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M7 10L12 15L17 10H7Z"/>
+        </svg>
       `;
-      button.disabled = false;
-      break;
+      
+      button.setAttribute('role', 'button');
+      button.setAttribute('title', 'Generate AI Reply - Click arrow for tone options');
+      
+      // Create dropdown
+      const dropdown = createToneDropdown();
+      
+      container.appendChild(button);
+      container.appendChild(dropdown);
+      
+      return container;
+    } catch (error) {
+      console.error('Error creating AI button:', error);
+      return null;
+    }
   }
-}
 
-// Show notification to user
-function showNotification(message, type = 'info') {
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.className = `ai-assistant-notification ${type}`;
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 20px;
-    border-radius: 6px;
-    color: white;
-    font-family: 'Roboto', sans-serif;
-    font-size: 14px;
-    z-index: 10000;
-    max-width: 300px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    animation: slideIn 0.3s ease-out;
-  `;
-  
-  // Set background color based on type
-  const colors = {
-    success: '#4CAF50',
-    error: '#f44336',
-    warning: '#ff9800',
-    info: '#2196F3'
-  };
-  notification.style.backgroundColor = colors[type] || colors.info;
-  
-  notification.textContent = message;
-  
-  // Add close button
-  const closeBtn = document.createElement('span');
-  closeBtn.innerHTML = '×';
-  closeBtn.style.cssText = `
-    margin-left: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    float: right;
-  `;
-  closeBtn.onclick = () => notification.remove();
-  notification.appendChild(closeBtn);
-  
-  document.body.appendChild(notification);
-  
-  // Auto-remove after 5 seconds
-  setTimeout(() => {
-    if (notification.parentNode) {
-      notification.remove();
-    }
-  }, 5000);
-}
-
-// Utility function to find elements with multiple selectors
-function findElements(selectors, parent = document) {
-  const elements = [];
-  selectors.forEach(selector => {
-    try {
-      const found = parent.querySelectorAll(selector);
-      elements.push(...found);
-    } catch (e) {
-      console.warn('Invalid selector:', selector, e);
-    }
-  });
-  return [...new Set(elements)]; // Remove duplicates
-}
-
-// Handle selection-based reply generation
-function handleSelectionReply(selectedText) {
-  const composeAreas = findElements(GMAIL_SELECTORS.composeTextArea);
-  if (composeAreas.length > 0) {
-    generateReply(selectedText)
-      .then(reply => {
-        insertTextIntoCompose(composeAreas[0], reply);
-        showNotification('AI reply generated from selection!', 'success');
-      })
-      .catch(error => {
-        showNotification(`Error: ${error.message}`, 'error');
+  // Create tone selection dropdown
+  function createToneDropdown() {
+    const dropdown = document.createElement('div');
+    dropdown.className = 'ai-tone-dropdown';
+    dropdown.style.cssText = `
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: white;
+      border: 1px solid #e1e5e9;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      min-width: 160px;
+      display: none;
+      overflow: hidden;
+    `;
+    
+    TONE_OPTIONS.forEach(tone => {
+      const option = document.createElement('div');
+      option.className = 'ai-tone-option';
+      option.dataset.tone = tone.id;
+      option.style.cssText = `
+        padding: 10px 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        transition: background-color 0.2s ease;
+        ${tone.id === (currentSettings.replyTone || 'professional') ? 'background-color: #f0f0f0;' : ''}
+      `;
+      
+      option.innerHTML = `
+        <span style="font-size: 16px;">${tone.icon}</span>
+        <span style="color: #333;">${tone.name}</span>
+      `;
+      
+      option.addEventListener('mouseenter', () => {
+        option.style.backgroundColor = '#f5f5f5';
       });
+      
+      option.addEventListener('mouseleave', () => {
+        if (tone.id === (currentSettings.replyTone || 'professional')) {
+          option.style.backgroundColor = '#f0f0f0';
+        } else {
+          option.style.backgroundColor = 'transparent';
+        }
+      });
+      
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectTone(tone.id, dropdown);
+      });
+      
+      dropdown.appendChild(option);
+    });
+    
+    return dropdown;
   }
-}
 
-// Add CSS animations
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  // Handle tone selection
+  async function selectTone(toneId, dropdown) {
+    try {
+      console.log('Tone selected:', toneId);
+      
+      // Update settings
+      currentSettings.replyTone = toneId;
+      await chrome.storage.sync.set({ replyTone: toneId });
+      
+      // Update UI
+      const container = dropdown.parentElement;
+      const button = container.querySelector('.ai-reply-btn-main');
+      const toneOption = TONE_OPTIONS.find(t => t.id === toneId) || TONE_OPTIONS[0];
+      
+      // Update button text
+      const toneSpan = button.querySelector('.ai-current-tone');
+      if (toneSpan) {
+        toneSpan.textContent = `(${toneOption.name})`;
+      }
+      
+      // Update selected option in dropdown
+      dropdown.querySelectorAll('.ai-tone-option').forEach(opt => {
+        if (opt.dataset.tone === toneId) {
+          opt.style.backgroundColor = '#f0f0f0';
+        } else {
+          opt.style.backgroundColor = 'transparent';
+        }
+      });
+      
+      // Hide dropdown
+      dropdown.style.display = 'none';
+      
+      showNotification(`Tone changed to ${toneOption.name}`, 'success');
+    } catch (error) {
+      console.error('Error selecting tone:', error);
+    }
   }
-  
-  @keyframes slideIn {
-    0% { transform: translateX(100%); opacity: 0; }
-    100% { transform: translateX(0); opacity: 1; }
-  }
-  
-  .ai-reply-btn:active {
-    transform: translateY(0) !important;
-  }
-`;
-document.head.appendChild(style);
 
-console.log('Gmail AI Assistant Content Script Ready!');
+  // Toggle dropdown visibility
+  function toggleDropdown(dropdown) {
+    try {
+      if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        // Hide all other dropdowns first
+        document.querySelectorAll('.ai-tone-dropdown').forEach(d => {
+          if (d !== dropdown) d.style.display = 'none';
+        });
+        dropdown.style.display = 'block';
+      } else {
+        dropdown.style.display = 'none';
+      }
+    } catch (error) {
+      console.error('Error toggling dropdown:', error);
+    }
+  }
+
+  // Simple button injection
+  function injectAIButton() {
+    try {
+      // Remove existing buttons first
+      document.querySelectorAll('.ai-reply-btn, .ai-reply-container').forEach(btn => btn.remove());
+      
+      // Find compose toolbar more specifically
+      // Look for compose windows first, then find toolbars within them
+      const composeWindows = document.querySelectorAll('[role="dialog"], .dw, .aDh');
+      let toolbar = null;
+      
+      // Check each compose window for a toolbar
+      for (const window of composeWindows) {
+        // Look for toolbars within compose windows that have formatting tools
+        const potentialToolbar = window.querySelector('.btC, [role="toolbar"]');
+        if (potentialToolbar) {
+          // Verify it's a compose toolbar by checking for send button or formatting tools nearby
+          const hasSendButton = window.querySelector('[data-tooltip*="Send"], .T-I-atl');
+          const hasFormatting = window.querySelector('[data-tooltip*="Bold"], [data-tooltip*="Italic"]');
+          
+          if (hasSendButton || hasFormatting) {
+            toolbar = potentialToolbar;
+            break;
+          }
+        }
+      }
+      
+      // Fallback: look for any toolbar that has formatting controls
+      if (!toolbar) {
+        const allToolbars = document.querySelectorAll('.btC, [role="toolbar"]');
+        for (const tb of allToolbars) {
+          if (tb.querySelector('[data-tooltip*="Bold"], [data-tooltip*="Italic"], [data-tooltip*="Underline"], [aria-label*="Bold"], [aria-label*="Italic"]')) {
+            toolbar = tb;
+            break;
+          }
+        }
+      }
+      
+      // Final fallback: look for toolbar near text editor
+      if (!toolbar) {
+        const textAreas = document.querySelectorAll('[role="textbox"][contenteditable="true"]');
+        for (const textArea of textAreas) {
+          const nearbyToolbar = textArea.parentElement?.querySelector('.btC') || 
+                               textArea.closest('.dw')?.querySelector('.btC') ||
+                               textArea.closest('[role="dialog"]')?.querySelector('.btC');
+          if (nearbyToolbar) {
+            toolbar = nearbyToolbar;
+            break;
+          }
+        }
+      }
+      
+      if (toolbar && !toolbar.querySelector('.ai-reply-btn')) {
+        const buttonContainer = createAIButton();
+        if (buttonContainer) {
+          const button = buttonContainer.querySelector('.ai-reply-btn-main');
+          const dropdown = buttonContainer.querySelector('.ai-tone-dropdown');
+          
+          // Add click handlers
+          button.addEventListener('click', (e) => {
+            // Check if click was on dropdown arrow
+            if (e.target.closest('.ai-dropdown-arrow')) {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleDropdown(dropdown);
+              return;
+            }
+            
+            // Check if dropdown is open - if so, close it and return
+            if (dropdown.style.display === 'block') {
+              dropdown.style.display = 'none';
+              return;
+            }
+            
+            // Generate AI reply
+            handleAIButtonClick(e);
+          });
+          
+          // Insert at beginning
+          const firstChild = toolbar.firstElementChild;
+          if (firstChild) {
+            toolbar.insertBefore(buttonContainer, firstChild);
+          } else {
+            toolbar.appendChild(buttonContainer);
+          }
+          
+          console.log('AI button with tone dropdown injected successfully into compose toolbar');
+        }
+      } else {
+        console.log('No suitable compose toolbar found');
+      }
+    } catch (error) {
+      console.error('Error injecting AI button:', error);
+    }
+  }
+
+  // Handle button click
+  async function handleAIButtonClick(event) {
+    let button = null;
+    
+    try {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      console.log('AI Reply button clicked');
+      
+      button = event.target.closest('.ai-reply-btn-main');
+      if (!button) return;
+      
+      // Load fresh settings
+      await loadSettings();
+      
+      if (!currentSettings.geminiApiKey) {
+        showNotification('Please set your Gemini API key in the extension popup', 'error');
+        return;
+      }
+
+      // Get email context from the original message
+      const emailContent = getEmailContentForReply();
+      console.log('Email context:', emailContent);
+
+      // Show loading state
+      const currentTone = currentSettings.replyTone || 'professional';
+      const toneOption = TONE_OPTIONS.find(t => t.id === currentTone) || TONE_OPTIONS[0];
+      
+      button.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="animation: spin 1s linear infinite;">
+          <path d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
+        </svg>
+        <span>Generating...</span>
+      `;
+      button.style.pointerEvents = 'none';
+
+      // Generate reply with proper email context
+      const response = await chrome.runtime.sendMessage({
+        action: 'generateReply',
+        emailContent: emailContent || 'Please generate a professional email reply.',
+        settings: currentSettings
+      });
+
+      if (response.success && response.reply) {
+        // Find compose textarea
+        const textArea = document.querySelector('[role="textbox"][g_editable="true"]');
+        if (textArea) {
+          textArea.focus();
+          
+          if (textArea.contentEditable === 'true') {
+            textArea.innerHTML = response.reply.replace(/\n/g, '<br>');
+          } else {
+            textArea.value = response.reply;
+          }
+          
+          // Trigger events to notify Gmail
+          const inputEvent = new Event('input', { bubbles: true });
+          const changeEvent = new Event('change', { bubbles: true });
+          textArea.dispatchEvent(inputEvent);
+          textArea.dispatchEvent(changeEvent);
+          
+          showNotification(`AI reply generated with ${toneOption.name} tone!`, 'success');
+        } else {
+          showNotification('Could not find compose area', 'error');
+        }
+      } else {
+        showNotification(response.error || 'Failed to generate reply', 'error');
+      }
+
+    } catch (error) {
+      console.error('Error in AI button click:', error);
+      showNotification('Error generating reply: ' + error.message, 'error');
+    } finally {
+      // Always restore button state
+      if (button) {
+        const currentTone = currentSettings.replyTone || 'professional';
+        const toneOption = TONE_OPTIONS.find(t => t.id === currentTone) || TONE_OPTIONS[0];
+        
+        button.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L2 7V17L12 22L22 17V7L12 2ZM12 4.5L18.5 7.75L12 11L5.5 7.75L12 4.5ZM4 9.5L11 12.75V19.5L4 16.25V9.5ZM13 12.75L20 9.5V16.25L13 19.5V12.75Z"/>
+          </svg>
+          <span>AI Reply</span>
+          <span class="ai-current-tone">(${toneOption.name})</span>
+          <svg class="ai-dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M7 10L12 15L17 10H7Z"/>
+          </svg>
+        `;
+        button.style.pointerEvents = 'auto';
+      }
+    }
+  }
+
+  // Get email content for better context
+  function getEmailContentForReply() {
+    try {
+      // Look for the original email content in various places
+      const emailSelectors = [
+        '.h7', // Gmail conversation
+        '.a3s.aiL', // Email body
+        '.ii.gt .a3s.aiL', // Nested email content
+        '.gmail_quote', // Quoted text
+        '[role="listitem"] .a3s' // List item content
+      ];
+      
+      for (const selector of emailSelectors) {
+        const elements = document.querySelectorAll(selector);
+        if (elements.length > 0) {
+          // Get the last email content (most recent)
+          const latestEmail = elements[elements.length - 1];
+          const content = latestEmail.textContent.trim();
+          if (content && content.length > 20) {
+            return content;
+          }
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting email content:', error);
+      return null;
+    }
+  }
+
+  // Simple notification function
+  function showNotification(message, type = 'info') {
+    try {
+      if (!document.body) return;
+      
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'error' ? '#ff4444' : type === 'success' ? '#44ff44' : '#4444ff'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      `;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 4000);
+    } catch (error) {
+      console.error('Error showing notification:', error);
+    }
+  }
+
+  // Message handler
+  function handleMessages(request, sender, sendResponse) {
+    try {
+      if (request.action === 'updateSettings') {
+        loadSettings();
+        sendResponse({ success: true });
+      }
+    } catch (error) {
+      console.error('Error handling message:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+  }
+
+  // Safe initialization
+  function initializeExtension() {
+    try {
+      console.log('Initializing Gmail AI Assistant (Safe Mode)...');
+      
+      // Check if we're on Gmail
+      if (!window.location.href.includes('mail.google.com')) {
+        return;
+      }
+      
+      // Add minimal CSS
+      try {
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `;
+        if (document.head) {
+          document.head.appendChild(style);
+        }
+      } catch (styleError) {
+        console.error('Error adding CSS:', styleError);
+      }
+
+      // Load settings and setup
+      loadSettings().then(() => {
+        // Try to inject button after delay
+        setTimeout(() => {
+          injectAIButton();
+          
+          // Set up periodic check for compose windows
+          setInterval(() => {
+            try {
+              // Only inject if we have compose windows but no AI button
+              const composeWindows = document.querySelectorAll('[role="dialog"], .dw, .aDh');
+              const hasComposeWindow = composeWindows.length > 0;
+              const hasAIButton = document.querySelector('.ai-reply-btn');
+              
+              if (hasComposeWindow && !hasAIButton) {
+                console.log('Compose window detected, injecting AI button...');
+                injectAIButton();
+              }
+            } catch (intervalError) {
+              // Ignore interval errors
+            }
+          }, 3000);
+        }, 2000);
+      });
+
+      // Listen for messages
+      chrome.runtime.onMessage.addListener(handleMessages);
+
+      // Add global click handler to close dropdowns when clicking outside
+      document.addEventListener('click', (e) => {
+        try {
+          if (!e.target.closest('.ai-reply-container')) {
+            document.querySelectorAll('.ai-tone-dropdown').forEach(dropdown => {
+              dropdown.style.display = 'none';
+            });
+          }
+        } catch (clickError) {
+          // Ignore click handler errors
+        }
+      });
+
+      console.log('Gmail AI Assistant initialized successfully with tone selection');
+      
+    } catch (error) {
+      console.error('Error in safe initialization:', error);
+    }
+  }
+
+  // Wait for DOM and initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(initializeExtension, 1000);
+    });
+  } else {
+    setTimeout(initializeExtension, 1000);
+  }
+
+})();
