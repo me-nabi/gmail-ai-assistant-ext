@@ -11,6 +11,10 @@
         <!-- Header -->
         <div class="header">
             <h1>Gmail AI Assistant</h1>
+            <div class="status-indicator">
+                <div id="statusDot" class="status-dot"></div>
+                <span id="statusText">Checking...</span>
+            </div>
         </div>
 
         <!-- API Key Section -->
@@ -19,7 +23,11 @@
                 <label for="apiKey">API Key</label>
                 <div class="input-wrapper">
                     <input type="password" id="apiKey" placeholder="Enter your Gemini API key">
-                    <button type="button" id="toggleApiKey" class="toggle-btn">👁️</button>
+                    <button type="button" id="toggleApiKey" class="toggle-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path id="eyeIcon" d="M12 4.5C7 4.5 2.7 7.6 1 12C2.7 16.4 7 19.5 12 19.5S21.3 16.4 23 12C21.3 7.6 17 4.5 12 4.5ZM12 17C9.2 17 7 14.8 7 12S9.2 7 12 7S17 9.2 17 12S14.8 17 12 17ZM12 9C10.3 9 9 10.3 9 12S10.3 15 12 15S15 13.7 15 12S13.7 9 12 9Z"/>
+                        </svg>
+                    </button>
                 </div>
                 <small><a href="https://makersuite.google.com/app/apikey" target="_blank">Get free API key</a></small>
             </div>
@@ -41,7 +49,6 @@
 
         <!-- Actions -->
         <div class="actions">
-            <button id="testConnection" class="btn secondary">Test API</button>
             <button id="saveSettings" class="btn primary">Save</button>
         </div>
 
