@@ -1,17 +1,19 @@
-# Gmail AI Assistant - Complete Chrome Extension
+# Gmail AI Assistant - Advanced Chrome Extension
 
-A fully self-contained Chrome extension that provides AI-powered auto-reply functionality for Gmail using Google's Gemini AI. **No backend server required!**
+A sophisticated Chrome extension that seamlessly integrates AI-powered email assistance directly into Gmail using Google's latest Gemini AI models. **No backend server required!**
 
-## 🌟 Features
+## 🌟 Key Features
 
-- **🤖 AI-Powered Replies**: Generate intelligent email replies using Google's Gemini AI
-- **🔧 No Backend Required**: All functionality runs directly in the browser
-- **⚡ One-Click Integration**: Adds an "AI Reply" button to Gmail compose windows
-- **🎨 Customizable Tones**: Professional, friendly, casual, formal, and concise reply styles
-- **📝 Context-Aware**: Analyzes the email thread to generate relevant responses
-- **🔒 Secure**: API key stored locally in your browser
-- **🎯 Smart Detection**: Automatically detects Gmail compose windows and reply contexts
-- **📱 Modern UI**: Clean, intuitive popup interface for configuration
+- **🤖 Latest Gemini AI Integration**: Uses cutting-edge Gemini 2.5 Flash and other latest models
+- **🔧 Zero Setup Backend**: All functionality runs directly in your browser
+- **⚡ Intelligent Button Placement**: Smart AI Reply button with integrated tone selection dropdown
+- **🎨 Advanced Tone Control**: Professional, friendly, casual, formal, and enthusiastic styles with inline selection
+- **📝 Context-Aware Generation**: Analyzes email threads for highly relevant responses
+- **🔒 Secure & Private**: API key stored locally, no data collection
+- **🎯 Smart Gmail Detection**: Automatically detects compose windows and reply contexts
+- **📱 Beautiful Modern UI**: Glassmorphism design with professional Gemini color scheme
+- **⚙️ Dual-Button Design**: Separate AI Reply and Custom Instructions buttons for streamlined workflow
+- **🔄 Auto-Fallback Models**: Multiple model support with automatic fallback for reliability
 
 ## 🚀 Installation
 
@@ -31,10 +33,10 @@ A fully self-contained Chrome extension that provides AI-powered auto-reply func
 
 ### Step 3: Configure the Extension
 1. Click the Gmail AI Assistant icon in your Chrome toolbar
-2. Paste your Gemini AI API key in the settings
-3. Choose your preferred reply tone and settings
-4. Click "Save Settings"
-5. Test the API connection with the "Test API Key" button
+2. Enter your Gemini AI API key in the settings
+3. Select your preferred response length (Short/Medium/Long)
+4. Click "Save" - the popup will auto-close and show connection status
+5. Green "Connected" status confirms successful API setup
 
 ## 📖 Usage
 
@@ -42,47 +44,64 @@ A fully self-contained Chrome extension that provides AI-powered auto-reply func
 1. Open Gmail in Chrome
 2. Open any email or start composing a new email
 3. Click the "Reply" or "Compose" button in Gmail
-4. Look for the purple "AI Reply" button in the compose toolbar
-5. Click "AI Reply" to generate an intelligent response
-6. Edit the generated text as needed
-7. Send your email!
+4. Look for the **AI Reply** button with dropdown in the compose toolbar
+5. **Select your tone** from the dropdown (Professional, Friendly, Casual, Formal, Enthusiastic)
+6. Click **"AI Reply"** to generate an intelligent response in your selected tone
+7. Edit the generated text as needed and send!
 
 ### Advanced Features
-- **Custom Instructions**: Add specific instructions for how AI should respond
-- **Tone Selection**: Choose from professional, friendly, casual, formal, or concise
-- **Response Length**: Control how long or short the replies should be
-- **Context Menu**: Right-click on selected text to generate replies from specific content
+- **🎯 Inline Tone Selection**: Choose tone directly from the AI Reply button dropdown
+- **⚙️ Custom Instructions Button**: Separate button for adding personalized AI instructions
+- **📊 Multi-Model Fallback**: Automatically tries multiple Gemini models for best results
+- **🔄 Auto-Connection Testing**: Real-time API connection status in popup
+- **💾 Auto-Save Settings**: Settings save automatically with visual confirmation
+- **🎨 Professional UI**: Modern glassmorphism design matching Gmail's interface
 
 ## ⚙️ Configuration Options
 
-### Reply Settings
-- **Reply Tone**: Adjust the style of generated responses
-- **Response Length**: Control token count (300-800 tokens)
-- **Custom Instructions**: Add personalized guidelines for AI responses
-- **Creativity Level**: Adjust how creative vs. conservative the AI should be
+### Popup Settings
+- **🔑 API Key**: Your Google Gemini AI API key (stored securely locally)
+- **📏 Response Length**: Short (300 tokens), Medium (500 tokens), Long (800 tokens)
+- **✅ Connection Status**: Real-time API connection verification
+- **💾 Auto-Save**: Settings automatically save and popup closes
 
-### Advanced Settings
-- **Auto-Reply Button**: Enable/disable the AI button in Gmail
-- **Temperature Control**: Fine-tune AI creativity (0 = conservative, 1 = creative)
+### In-Gmail Controls
+- **🎨 Tone Dropdown**: Select from 5 different response tones directly in Gmail
+  - **Professional**: Formal, business-appropriate language
+  - **Friendly**: Warm, approachable, personable tone
+  - **Casual**: Relaxed, informal, conversational style
+  - **Formal**: Highly structured, sophisticated language
+  - **Enthusiastic**: Energetic, positive, motivating tone
+- **⚙️ Custom Instructions**: Separate button for adding specific AI guidelines
+- **🔄 Smart Button Placement**: Automatically detects and integrates with Gmail toolbar
 
 ## 🔧 Technical Details
 
-### Architecture
-- **Content Script**: Injects AI button into Gmail interface and handles email parsing
-- **Background Script**: Manages API calls to Gemini AI and settings storage
-- **Popup Interface**: Provides user-friendly configuration panel
+### Latest AI Integration
+- **🚀 Gemini 2.5 Flash**: Uses Google's newest and fastest model as primary
+- **🔄 Multi-Model Fallback**: Automatically tries Gemini 2.0 Flash Exp, 1.5 Flash, and 1.5 Pro
+- **📈 Enhanced Prompting**: Advanced prompt engineering for professional email generation
+- **⚡ Optimized Performance**: Smart token management and response handling
 
-### Gmail Integration
-- **Selective Injection**: Only loads in Gmail domains for optimal performance
-- **Dynamic Detection**: Automatically detects new compose windows
-- **Context Parsing**: Extracts email content and thread context for intelligent replies
-- **Multiple Compose Support**: Works with multiple open compose windows
+### Advanced Architecture  
+- **📱 Modern Content Script**: Sophisticated Gmail integration with dual-button design
+- **🔧 Service Worker Background**: Efficient API management with error handling
+- **🎨 Glassmorphism Popup**: Beautiful modern UI with professional color scheme
+- **💾 Smart Storage**: Efficient settings management with auto-save functionality
 
-### Security Features
-- **Local Storage**: API keys stored securely in Chrome's sync storage
-- **HTTPS Only**: All API communications use secure HTTPS
-- **No Data Collection**: Extension doesn't collect or transmit personal data
-- **Minimal Permissions**: Only requests necessary permissions for Gmail integration
+### Gmail Integration Excellence
+- **🎯 Intelligent Injection**: Advanced selector logic for reliable button placement
+- **🔍 Smart Detection**: Robust compose window detection with mutation observers  
+- **📝 Context Analysis**: Deep email thread parsing for contextual responses
+- **🖱️ Interactive Dropdowns**: Seamless tone selection and custom instructions UI
+- **📱 Responsive Design**: Works across different Gmail layouts and screen sizes
+
+### Security & Privacy
+- **🔒 Local-Only Storage**: API keys never leave your browser
+- **🛡️ HTTPS Encryption**: All API communications secured with HTTPS
+- **🚫 Zero Data Collection**: No personal data collected or transmitted
+- **⚡ Minimal Permissions**: Only essential Gmail integration permissions
+- **🔐 Secure API Handling**: Robust error handling and API key validation
 
 ## 🎯 Comparison with Previous Versions
 
@@ -137,23 +156,34 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Common Issues
 
-**"API Key Required" Error**
-- Make sure you've entered a valid Gemini AI API key in the extension popup
-- Test the API key using the "Test API Key" button
+**❌ "Connection Failed" Status**
+- Verify your Gemini AI API key is correct and active
+- Check your internet connection
+- The extension automatically tests multiple Gemini models
+- Green "Connected" status confirms successful setup
 
-**AI Button Not Appearing**
-- Refresh the Gmail page after installing the extension
-- Check if the extension is enabled in `chrome://extensions/`
-- Make sure you're on the correct Gmail domain (mail.google.com)
+**🔘 AI Button Not Appearing**
+- Refresh Gmail after installing the extension
+- Ensure extension is enabled in `chrome://extensions/`
+- Verify you're on mail.google.com (not other Google domains)
+- Try opening a new compose window
 
-**Generated Reply Not Inserting**
-- Try clicking in the compose text area first
-- Check Gmail's compose window is fully loaded
-- Refresh the page and try again
+**📝 Generated Reply Issues**
+- Click in the compose text area before generating
+- Wait for Gmail compose window to fully load
+- Try selecting a different tone from the dropdown
+- Check browser console (F12) for any error messages
 
-**Extension Not Working After Update**
-- Go to `chrome://extensions/` and click the refresh icon for the extension
-- Clear browser cache and reload Gmail
+**⚙️ Popup Not Opening**
+- Right-click extension icon → "Inspect popup" to debug
+- Check if Chrome has blocked the extension
+- Try reloading the extension in developer mode
+
+**🔄 "All Models Failed" Error**
+- This indicates API connectivity issues or invalid API key
+- Check your API key at [Google AI Studio](https://makersuite.google.com/app/apikey)
+- Verify your API key has Gemini access enabled
+- Try again after a few minutes (rate limiting)
 
 ### Debug Mode
 1. Right-click on the extension icon → "Inspect popup"
