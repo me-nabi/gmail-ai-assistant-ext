@@ -124,11 +124,12 @@ console.log('Gmail AI Assistant loaded - Safe version');
       border-radius: 6px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       z-index: 1000;
-      min-width: 160px;
+      min-width: 220px;
       display: none;
       overflow: hidden;
     `;
     
+    // Add tone options
     TONE_OPTIONS.forEach(tone => {
       const option = document.createElement('div');
       option.className = 'ai-tone-option';
@@ -169,6 +170,57 @@ console.log('Gmail AI Assistant loaded - Safe version');
       dropdown.appendChild(option);
     });
     
+    // Add separator if custom instructions exist
+    if (currentSettings.customInstructions && currentSettings.customInstructions.trim()) {
+      const separator = document.createElement('div');
+      separator.style.cssText = `
+        height: 1px;
+        background: #e1e5e9;
+        margin: 4px 0;
+      `;
+      dropdown.appendChild(separator);
+      
+      // Add custom instructions section
+      const customSection = document.createElement('div');
+      customSection.style.cssText = `
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-top: 1px solid #e1e5e9;
+      `;
+      
+      const customLabel = document.createElement('div');
+      customLabel.style.cssText = `
+        font-size: 11px;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      `;
+      customLabel.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+        </svg>
+        Custom Instructions
+      `;
+      
+      const customText = document.createElement('div');
+      customText.style.cssText = `
+        font-size: 12px;
+        color: #444;
+        line-height: 1.3;
+        max-height: 60px;
+        overflow-y: auto;
+        padding: 4px 0;
+      `;
+      customText.textContent = currentSettings.customInstructions.trim();
+      
+      customSection.appendChild(customLabel);
+      customSection.appendChild(customText);
+      dropdown.appendChild(customSection);
+    }
+    
     return dropdown;
   }
 
@@ -208,6 +260,21 @@ console.log('Gmail AI Assistant loaded - Safe version');
     } catch (error) {
       console.error('Error selecting tone:', error);
     }
+  }
+
+  // Refresh dropdown content when settings change
+  function refreshDropdown(container) {
+    try {
+      const oldDropdown = container.querySelector('.ai-tone-dropdown');
+      if (oldDropdown) {
+        const newDropdown = createToneDropdown();
+        container.replaceChild(newDropdown, oldDropdown);
+        return newDropdown;
+      }
+    } catch (error) {
+      console.error('Error refreshing dropdown:', error);
+    }
+    return null;
   }
 
   // Toggle dropdown visibility

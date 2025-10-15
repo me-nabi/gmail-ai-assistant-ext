@@ -456,6 +456,26 @@ input[type="range"]::-moz-range-thumb {
     background: #a8a8a8;
 }
 
+/* Info Note */
+.info-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+    background: #f8f9fe;
+    border: 1px solid #e1e5f3;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #4a5568;
+    line-height: 1.4;
+}
+
+.info-note svg {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
 /* Animations */
 .popup-container {
     animation: slideUp 0.3s ease-out;

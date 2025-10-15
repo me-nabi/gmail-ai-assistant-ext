@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Get DOM elements
     const elements = {
         apiKey: document.getElementById('apiKey'),
-        replyTone: document.getElementById('replyTone'),
         maxTokens: document.getElementById('maxTokens'),
         customInstructions: document.getElementById('customInstructions'),
         autoReplyEnabled: document.getElementById('autoReplyEnabled'),
@@ -36,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 // Populate form fields
                 elements.apiKey.value = settings.apiKey || '';
-                elements.replyTone.value = settings.replyTone || 'professional';
                 elements.maxTokens.value = settings.maxTokens || '500';
                 elements.customInstructions.value = settings.customInstructions || '';
                 elements.autoReplyEnabled.checked = settings.autoReplyEnabled !== false;
@@ -169,7 +167,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const settings = {
                 apiKey: elements.apiKey.value.trim(),
-                replyTone: elements.replyTone.value,
                 maxTokens: parseInt(elements.maxTokens.value),
                 customInstructions: elements.customInstructions.value.trim(),
                 autoReplyEnabled: elements.autoReplyEnabled.checked,
