@@ -61,9 +61,10 @@ console.log('Gmail AI Assistant loaded - Safe version');
         margin-right: 8px;
         position: relative;
         display: inline-flex;
+        gap: 6px;
       `;
       
-      // Main button
+      // Main AI Reply button
       const button = document.createElement('div');
       button.className = 'T-I J-J5-Ji aoO v7 T-I-atl L3 ai-reply-btn ai-reply-btn-main';
       button.style.cssText = `
@@ -98,11 +99,45 @@ console.log('Gmail AI Assistant loaded - Safe version');
       button.setAttribute('role', 'button');
       button.setAttribute('title', 'Generate AI Reply - Click arrow for tone options');
       
-      // Create dropdown
-      const dropdown = createToneDropdown();
+      // Custom Instructions button
+      const customButton = document.createElement('div');
+      customButton.className = 'T-I J-J5-Ji aoO v7 T-I-atl L3 ai-custom-btn';
+      customButton.style.cssText = `
+        cursor: pointer;
+        background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+      `;
+      
+      customButton.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 2px;">
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+        </svg>
+        <span>Custom</span>
+        <svg class="ai-dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M7 10L12 15L17 10H7Z"/>
+        </svg>
+      `;
+      
+      customButton.setAttribute('role', 'button');
+      customButton.setAttribute('title', 'Edit Custom Instructions');
+      
+      // Create dropdowns
+      const toneDropdown = createToneDropdown();
+      const customDropdown = createCustomInstructionsDropdown();
       
       container.appendChild(button);
-      container.appendChild(dropdown);
+      container.appendChild(customButton);
+      container.appendChild(toneDropdown);
+      container.appendChild(customDropdown);
       
       return container;
     } catch (error) {
@@ -113,6 +148,7 @@ console.log('Gmail AI Assistant loaded - Safe version');
 
   // Create tone selection dropdown
   function createToneDropdown() {
+    console.log('Creating tone dropdown with custom instructions...');
     const dropdown = document.createElement('div');
     dropdown.className = 'ai-tone-dropdown';
     dropdown.style.cssText = `
@@ -170,58 +206,293 @@ console.log('Gmail AI Assistant loaded - Safe version');
       dropdown.appendChild(option);
     });
     
-    // Add separator if custom instructions exist
-    if (currentSettings.customInstructions && currentSettings.customInstructions.trim()) {
-      const separator = document.createElement('div');
-      separator.style.cssText = `
-        height: 1px;
-        background: #e1e5e9;
-        margin: 4px 0;
-      `;
-      dropdown.appendChild(separator);
+    // Add separator
+    const separator = document.createElement('div');
+    separator.style.cssText = `
+      height: 1px;
+      background: #e1e5e9;
+      margin: 4px 0;
+    `;
+    dropdown.appendChild(separator);
+    
+    // Add custom instructions option (like a tone option)
+    console.log('Adding custom instructions option...');
+    const customOption = document.createElement('div');
+    customOption.className = 'ai-custom-option';
+    customOption.style.cssText = `
+      padding: 10px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      transition: background-color 0.2s ease;
+      border-bottom: 1px solid #e1e5e9;
+    `;
+    
+    customOption.innerHTML = `
+      <span style="font-size: 16px;">📝</span>
+      <span style="color: #333;">Custom Instructions</span>
+      <span style="margin-left: auto; color: #666; font-size: 11px;">Click to edit</span>
+    `;
+    
+    customOption.addEventListener('mouseenter', () => {
+      customOption.style.backgroundColor = '#f5f5f5';
+    });
+    
+    customOption.addEventListener('mouseleave', () => {
+      customOption.style.backgroundColor = 'transparent';
+    });
+    
+    customOption.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showCustomInstructionsEditor(dropdown);
+    });
+    
+    dropdown.appendChild(customOption);
+    
+    console.log('Custom instructions option added to dropdown');
+    return dropdown;
+  }
+
+  // Create custom instructions dropdown
+  function createCustomInstructionsDropdown() {
+    console.log('Creating custom instructions dropdown...');
+    const dropdown = document.createElement('div');
+    dropdown.className = 'ai-custom-dropdown';
+    dropdown.style.cssText = `
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #e1e5e9;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      min-width: 320px;
+      display: none;
+      overflow: hidden;
+      padding: 16px;
+    `;
+    
+    dropdown.innerHTML = `
+      <div style="margin-bottom: 12px;">
+        <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          📝 Custom Instructions
+        </div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 12px;">
+          Add specific instructions for AI replies (e.g., tone, style, length preferences)
+        </div>
+      </div>
       
-      // Add custom instructions section
-      const customSection = document.createElement('div');
-      customSection.style.cssText = `
-        padding: 8px 12px;
-        background: #f8f9fa;
-        border-top: 1px solid #e1e5e9;
-      `;
+      <textarea 
+        class="custom-instructions-textarea"
+        placeholder="Example: Always be polite and professional. Keep responses under 100 words. Use bullet points when listing items."
+        style="
+          width: 100%;
+          min-height: 100px;
+          padding: 12px;
+          border: 2px solid #e1e5e9;
+          border-radius: 6px;
+          font-size: 13px;
+          font-family: inherit;
+          line-height: 1.4;
+          resize: vertical;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.2s ease;
+        "
+      ></textarea>
       
-      const customLabel = document.createElement('div');
-      customLabel.style.cssText = `
-        font-size: 11px;
-        font-weight: 600;
-        color: #666;
-        margin-bottom: 4px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      `;
-      customLabel.innerHTML = `
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-        </svg>
-        Custom Instructions
-      `;
-      
-      const customText = document.createElement('div');
-      customText.style.cssText = `
-        font-size: 12px;
-        color: #444;
-        line-height: 1.3;
-        max-height: 60px;
-        overflow-y: auto;
-        padding: 4px 0;
-      `;
-      customText.textContent = currentSettings.customInstructions.trim();
-      
-      customSection.appendChild(customLabel);
-      customSection.appendChild(customText);
-      dropdown.appendChild(customSection);
-    }
+      <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="custom-cancel-btn" style="
+          padding: 6px 12px;
+          border: 1px solid #ccc;
+          background: white;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+          color: #666;
+        ">Cancel</button>
+        <button class="custom-save-btn" style="
+          padding: 6px 12px;
+          border: none;
+          background: #00b894;
+          color: white;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+        ">Save</button>
+      </div>
+    `;
+    
+    // Get elements
+    const textarea = dropdown.querySelector('.custom-instructions-textarea');
+    const saveBtn = dropdown.querySelector('.custom-save-btn');
+    const cancelBtn = dropdown.querySelector('.custom-cancel-btn');
+    
+    // Load current instructions
+    textarea.value = currentSettings.customInstructions || '';
+    
+    // Event handlers
+    textarea.addEventListener('focus', () => {
+      textarea.style.borderColor = '#00b894';
+    });
+    
+    textarea.addEventListener('blur', () => {
+      textarea.style.borderColor = '#e1e5e9';
+    });
+    
+    saveBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        const instructions = textarea.value.trim();
+        await chrome.runtime.sendMessage({
+          action: 'updateCustomInstructions',
+          customInstructions: instructions
+        });
+        
+        currentSettings.customInstructions = instructions;
+        showNotification('Custom instructions saved!', 'success');
+        dropdown.style.display = 'none';
+        console.log('Custom instructions saved:', instructions);
+      } catch (error) {
+        console.error('Error saving custom instructions:', error);
+        showNotification('Error saving instructions', 'error');
+      }
+    });
+    
+    cancelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      textarea.value = currentSettings.customInstructions || '';
+      dropdown.style.display = 'none';
+    });
+    
+    // Prevent dropdown from closing when clicking inside
+    dropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
     
     return dropdown;
+  }
+
+  // Show custom instructions editor
+  function showCustomInstructionsEditor(dropdown) {
+    console.log('Opening custom instructions editor...');
+    
+    // Create editor overlay
+    const editor = document.createElement('div');
+    editor.className = 'ai-custom-editor';
+    editor.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    
+    const editorContent = document.createElement('div');
+    editorContent.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    `;
+    
+    editorContent.innerHTML = `
+      <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">
+        📝 Custom Instructions
+      </h3>
+      <textarea 
+        id="customInstructionsEditor" 
+        placeholder="Add specific instructions for AI replies..."
+        style="
+          width: 100%;
+          min-height: 120px;
+          padding: 12px;
+          border: 2px solid #e1e5e9;
+          border-radius: 6px;
+          font-size: 14px;
+          font-family: inherit;
+          line-height: 1.4;
+          resize: vertical;
+          outline: none;
+          box-sizing: border-box;
+        "
+      ></textarea>
+      <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+        <button id="cancelCustom" style="
+          padding: 8px 16px;
+          border: 1px solid #ccc;
+          background: white;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 13px;
+        ">Cancel</button>
+        <button id="saveCustom" style="
+          padding: 8px 16px;
+          border: none;
+          background: #1a73e8;
+          color: white;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 13px;
+        ">Save</button>
+      </div>
+    `;
+    
+    const textarea = editorContent.querySelector('#customInstructionsEditor');
+    textarea.value = currentSettings.customInstructions || '';
+    
+    // Event handlers
+    editorContent.querySelector('#cancelCustom').addEventListener('click', () => {
+      document.body.removeChild(editor);
+      dropdown.style.display = 'none';
+    });
+    
+    editorContent.querySelector('#saveCustom').addEventListener('click', async () => {
+      try {
+        const newInstructions = textarea.value.trim();
+        await chrome.runtime.sendMessage({
+          action: 'updateCustomInstructions',
+          customInstructions: newInstructions
+        });
+        
+        currentSettings.customInstructions = newInstructions;
+        console.log('Custom instructions saved:', newInstructions);
+        
+        // Show success notification
+        showNotification('Custom instructions saved!', 'success');
+        
+        document.body.removeChild(editor);
+        dropdown.style.display = 'none';
+      } catch (error) {
+        console.error('Error saving custom instructions:', error);
+        showNotification('Error saving instructions', 'error');
+      }
+    });
+    
+    // Close on overlay click
+    editor.addEventListener('click', (e) => {
+      if (e.target === editor) {
+        document.body.removeChild(editor);
+        dropdown.style.display = 'none';
+      }
+    });
+    
+    editor.appendChild(editorContent);
+    document.body.appendChild(editor);
+    
+    // Focus textarea
+    setTimeout(() => textarea.focus(), 100);
   }
 
   // Handle tone selection
@@ -351,14 +622,23 @@ console.log('Gmail AI Assistant loaded - Safe version');
         if (buttonContainer) {
           const button = buttonContainer.querySelector('.ai-reply-btn-main');
           const dropdown = buttonContainer.querySelector('.ai-tone-dropdown');
+          const customButton = buttonContainer.querySelector('.ai-custom-btn');
+          const customDropdown = buttonContainer.querySelector('.ai-custom-dropdown');
           
-          // Add click handlers
-          button.addEventListener('click', (e) => {
+          // Add click handlers for AI Reply button
+          button.addEventListener('click', async (e) => {
             // Check if click was on dropdown arrow
             if (e.target.closest('.ai-dropdown-arrow')) {
               e.preventDefault();
               e.stopPropagation();
-              toggleDropdown(dropdown);
+              
+              // Hide custom dropdown if open
+              if (customDropdown) customDropdown.style.display = 'none';
+              
+              // Refresh settings and dropdown before showing
+              await loadSettings();
+              const refreshedDropdown = refreshDropdown(buttonContainer) || dropdown;
+              toggleDropdown(refreshedDropdown);
               return;
             }
             
@@ -371,6 +651,30 @@ console.log('Gmail AI Assistant loaded - Safe version');
             // Generate AI reply
             handleAIButtonClick(e);
           });
+          
+          // Add click handlers for Custom Instructions button
+          if (customButton && customDropdown) {
+            customButton.addEventListener('click', async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // Hide tone dropdown if open
+              if (dropdown) dropdown.style.display = 'none';
+              
+              // Toggle custom dropdown
+              if (customDropdown.style.display === 'block') {
+                customDropdown.style.display = 'none';
+              } else {
+                // Refresh current settings
+                await loadSettings();
+                const textarea = customDropdown.querySelector('.custom-instructions-textarea');
+                if (textarea) {
+                  textarea.value = currentSettings.customInstructions || '';
+                }
+                customDropdown.style.display = 'block';
+              }
+            });
+          }
           
           // Insert at beginning
           const firstChild = toolbar.firstElementChild;
@@ -551,7 +855,12 @@ console.log('Gmail AI Assistant loaded - Safe version');
   function handleMessages(request, sender, sendResponse) {
     try {
       if (request.action === 'updateSettings') {
-        loadSettings();
+        loadSettings().then(() => {
+          // Refresh all existing dropdowns with new settings
+          document.querySelectorAll('.ai-reply-container').forEach(container => {
+            refreshDropdown(container);
+          });
+        });
         sendResponse({ success: true });
       }
     } catch (error) {
@@ -619,6 +928,9 @@ console.log('Gmail AI Assistant loaded - Safe version');
         try {
           if (!e.target.closest('.ai-reply-container')) {
             document.querySelectorAll('.ai-tone-dropdown').forEach(dropdown => {
+              dropdown.style.display = 'none';
+            });
+            document.querySelectorAll('.ai-custom-dropdown').forEach(dropdown => {
               dropdown.style.display = 'none';
             });
           }

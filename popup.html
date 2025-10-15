@@ -10,129 +10,43 @@
     <div class="popup-container">
         <!-- Header -->
         <div class="header">
-            <div class="header-content">
-                <div class="icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2L2 7V17L12 22L22 17V7L12 2ZM12 4.5L18.5 7.75L12 11L5.5 7.75L12 4.5ZM4 9.5L11 12.75V19.5L4 16.25V9.5ZM13 12.75L20 9.5V16.25L13 19.5V12.75Z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h1>Gmail AI Assistant</h1>
-                    <p>Auto-reply with AI intelligence</p>
-                </div>
-            </div>
-            <div class="status-indicator">
-                <div id="statusDot" class="status-dot"></div>
-                <span id="statusText">Checking...</span>
-            </div>
+            <h1>Gmail AI Assistant</h1>
         </div>
 
         <!-- API Key Section -->
         <div class="section">
-            <h3>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 14C5.9 14 5 13.1 5 12S5.9 10 7 10 9 10.9 9 12 8.1 14 7 14M12.6 10C11.8 7.7 9.6 6 7 6C3.7 6 1 8.7 1 12S3.7 18 7 18C9.6 18 11.8 16.3 12.6 14H16V18H20V14H23V10H12.6Z"/>
-                </svg>
-                API Configuration
-            </h3>
             <div class="form-group">
-                <label for="apiKey">Gemini AI API Key *</label>
+                <label for="apiKey">API Key</label>
                 <div class="input-wrapper">
-                    <input type="password" id="apiKey" placeholder="Enter your Google AI API key">
-                    <button type="button" id="toggleApiKey" class="toggle-btn">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path id="eyeIcon" d="M12 4.5C7 4.5 2.7 7.6 1 12C2.7 16.4 7 19.5 12 19.5S21.3 16.4 23 12C21.3 7.6 17 4.5 12 4.5ZM12 17C9.2 17 7 14.8 7 12S9.2 7 12 7S17 9.2 17 12S14.8 17 12 17ZM12 9C10.3 9 9 10.3 9 12S10.3 15 12 15S15 13.7 15 12S13.7 9 12 9Z"/>
-                        </svg>
-                    </button>
+                    <input type="password" id="apiKey" placeholder="Enter your Gemini API key">
+                    <button type="button" id="toggleApiKey" class="toggle-btn">👁️</button>
                 </div>
-                <small>Get your free API key from <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></small>
+                <small><a href="https://makersuite.google.com/app/apikey" target="_blank">Get free API key</a></small>
             </div>
         </div>
 
-        <!-- Settings Section -->
+        <!-- Settings -->
         <div class="section">
-            <h3>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.14,12.94C19.18,12.64 19.2,12.33 19.2,12C19.2,11.68 19.18,11.36 19.14,11.06L21.16,9.48C21.34,9.34 21.39,9.07 21.28,8.87L19.36,5.55C19.24,5.33 18.99,5.26 18.77,5.33L16.38,6.29C15.88,5.91 15.35,5.59 14.76,5.35L14.4,2.81C14.36,2.57 14.16,2.4 13.92,2.4H10.08C9.84,2.4 9.64,2.57 9.6,2.81L9.24,5.35C8.65,5.59 8.12,5.92 7.62,6.29L5.23,5.33C5.01,5.26 4.76,5.33 4.64,5.55L2.72,8.87C2.61,9.07 2.66,9.34 2.84,9.48L4.86,11.06C4.82,11.36 4.8,11.69 4.8,12C4.8,12.31 4.82,12.64 4.86,12.94L2.84,14.52C2.66,14.66 2.61,14.93 2.72,15.13L4.64,18.45C4.76,18.67 5.01,18.74 5.23,18.67L7.62,17.71C8.12,18.08 8.65,18.4 9.24,18.65L9.6,21.19C9.64,21.43 9.84,21.6 10.08,21.6H13.92C14.16,21.6 14.36,21.43 14.4,21.19L14.76,18.65C15.35,18.4 15.88,18.08 16.38,17.71L18.77,18.67C18.99,18.74 19.24,18.67 19.36,18.45L21.28,15.13C21.39,14.93 21.34,14.66 21.16,14.52L19.14,12.94ZM12,15.6C10.02,15.6 8.4,13.98 8.4,12C8.4,10.02 10.02,8.4 12,8.4C13.98,8.4 15.6,10.02 15.6,12C15.6,13.98 13.98,15.6 12,15.6Z"/>
-                </svg>
-                Reply Settings
-            </h3>
-            
-            <div class="info-note">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #5352ed;">
-                    <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
-                </svg>
-                <span>Tone selection is now available directly on the AI Reply button in Gmail compose windows</span>
-            </div>
-
             <div class="form-group">
                 <label for="maxTokens">Response Length</label>
                 <select id="maxTokens">
-                    <option value="300">Short (300 tokens)</option>
-                    <option value="500">Medium (500 tokens)</option>
-                    <option value="800">Long (800 tokens)</option>
+                    <option value="300">Short</option>
+                    <option value="500">Medium</option>
+                    <option value="800">Long</option>
                 </select>
             </div>
-
-            <div class="form-group">
-                <label for="customInstructions">Custom Instructions (Optional)</label>
-                <textarea id="customInstructions" placeholder="Add any specific instructions for AI replies..." rows="3"></textarea>
-            </div>
         </div>
 
-        <!-- Advanced Settings -->
-        <div class="section">
-            <h3>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M22,9V7H20V5A2,2 0 0,0 18,3H16V1H14V3H10V1H8V3H6A2,2 0 0,0 4,5V7H2V9H4V15H2V17H4V19A2,2 0 0,0 6,21H8V23H10V21H14V23H16V21H18A2,2 0 0,0 20,19V17H22V15H20V9H22M18,19H6V5H18V19Z"/>
-                </svg>
-                Advanced
-            </h3>
-            
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="autoReplyEnabled">
-                    Enable Auto-Reply Button
-                </label>
-                <small>Show AI reply button in Gmail compose windows</small>
-            </div>
 
-            <div class="form-group">
-                <label for="temperature">Creativity Level</label>
-                <div class="slider-wrapper">
-                    <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
-                    <div class="slider-labels">
-                        <span>Conservative</span>
-                        <span>Balanced</span>
-                        <span>Creative</span>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Action Buttons -->
+        <!-- Actions -->
         <div class="actions">
-            <button id="testConnection" class="btn secondary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10.5V11.5C15.4,11.5 16,12.4 16,13V16C16,16.6 15.6,17 15,17H9C8.4,17 8,16.6 8,16V13C8,12.4 8.4,11.5 9,11.5V10.5C9,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.2,9 10.2,10.5V11.5H13.8V10.5C13.8,9 12.8,8.2 12,8.2Z"/>
-                </svg>
-                Test API Key
-            </button>
-            <button id="saveSettings" class="btn primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/>
-                </svg>
-                Save Settings
-            </button>
+            <button id="testConnection" class="btn secondary">Test API</button>
+            <button id="saveSettings" class="btn primary">Save</button>
         </div>
 
-        <!-- Status Messages -->
+        <!-- Status -->
         <div id="statusMessage" class="status-message"></div>
-
-        <!-- Footer -->
-        <div class="footer">
-            <p>Version 1.0.0 • <a href="https://github.com" target="_blank">View on GitHub</a></p>
-        </div>
     </div>
 
     <script src="popup.js"></script>

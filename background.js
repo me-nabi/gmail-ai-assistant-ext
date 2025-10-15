@@ -53,6 +53,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
+
+  if (request.action === 'updateCustomInstructions') {
+    chrome.storage.sync.set({ customInstructions: request.customInstructions }, () => {
+      sendResponse({ success: true });
+      
+      // Notify all content scripts to update their dropdowns
+      chrome.tabs.query({ url: "*://mail.google.com/*" }, (tabs) => {
+        tabs.forEach(tab => {
+          chrome.tabs.sendMessage(tab.id, { action: 'updateSettings' }).catch(() => {
+            // Ignore errors for inactive tabs
+          });
+        });
+      });
+    });
+    return true;
+  }
 });
 
 // Generate email reply using Gemini AI
