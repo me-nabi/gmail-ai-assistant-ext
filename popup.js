@@ -196,12 +196,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             };
             
-            // Try different models (updated to match new Gemini SDK format)
+            // Try different models (same as background.js)
             const models = [
-                'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
                 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
                 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-                'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent'
+                'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent',
+                'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent'
             ];
             
             for (const modelUrl of models) {

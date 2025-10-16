@@ -28,16 +28,18 @@ console.log('Gmail AI Assistant loaded - Safe version');
     try {
       const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
       if (response && response.success) {
+        // Explicitly handle custom instructions to avoid caching issues
+        const customInstructions = response.settings.customInstructions;
         currentSettings = {
           ...response.settings,
           geminiApiKey: response.settings.apiKey || response.settings.geminiApiKey || '',
           replyTone: response.settings.replyTone || 'professional',
           maxTokens: response.settings.maxTokens || 500,
           temperature: response.settings.temperature || 0.7,
-          customInstructions: response.settings.customInstructions || '',
+          customInstructions: (customInstructions === undefined || customInstructions === null) ? '' : customInstructions,
           autoReplyEnabled: response.settings.autoReplyEnabled !== false
         };
-        console.log('Settings loaded successfully');
+        console.log('Settings loaded successfully. Custom instructions:', currentSettings.customInstructions);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -348,15 +350,19 @@ console.log('Gmail AI Assistant loaded - Safe version');
       e.stopPropagation();
       try {
         const instructions = textarea.value.trim();
+        console.log('Saving custom instructions:', instructions === '' ? '(empty)' : instructions);
+        
         await chrome.runtime.sendMessage({
           action: 'updateCustomInstructions',
           customInstructions: instructions
         });
         
+        // Force update current settings immediately
         currentSettings.customInstructions = instructions;
-        showNotification('Custom instructions saved!', 'success');
+        console.log('Current settings updated. Custom instructions now:', currentSettings.customInstructions);
+        
+        showNotification(instructions === '' ? 'Custom instructions cleared!' : 'Custom instructions saved!', 'success');
         dropdown.style.display = 'none';
-        console.log('Custom instructions saved:', instructions);
       } catch (error) {
         console.error('Error saving custom instructions:', error);
         showNotification('Error saving instructions', 'error');
@@ -855,7 +861,9 @@ console.log('Gmail AI Assistant loaded - Safe version');
   function handleMessages(request, sender, sendResponse) {
     try {
       if (request.action === 'updateSettings') {
+        console.log('Received updateSettings message, reloading settings...');
         loadSettings().then(() => {
+          console.log('Settings reloaded. Custom instructions:', currentSettings.customInstructions);
           // Refresh all existing dropdowns with new settings
           document.querySelectorAll('.ai-reply-container').forEach(container => {
             refreshDropdown(container);

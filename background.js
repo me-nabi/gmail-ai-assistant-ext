@@ -55,7 +55,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'updateCustomInstructions') {
-    chrome.storage.sync.set({ customInstructions: request.customInstructions }, () => {
+    const instructions = request.customInstructions || '';
+    console.log('Saving custom instructions to storage:', instructions === '' ? '(empty string)' : instructions);
+    
+    chrome.storage.sync.set({ customInstructions: instructions }, () => {
+      console.log('Custom instructions saved successfully');
       sendResponse({ success: true });
       
       // Notify all content scripts to update their dropdowns
@@ -120,12 +124,12 @@ async function generateEmailReply(emailContent, settings = {}) {
       ]
     };
     
-    // Try different models (updated to match new Gemini SDK format)
+    // Try different models (updated for new Gemini API)
     const models = [
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent'
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent',
+      'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent'
     ];
     
     let response;
@@ -204,49 +208,31 @@ function buildEmailPrompt(emailContent, settings) {
   
   console.log(`Building prompt with tone: ${tone}, custom instructions: ${customInstructions}`);
   
-  // Define tone-specific characteristics
-  const toneGuidelines = {
-    professional: "formal, courteous, clear, and business-appropriate language. Use proper grammar and maintain respectful distance.",
-    friendly: "warm, approachable, and personable language while remaining professional. Use conversational tone with appropriate enthusiasm.",
-    casual: "relaxed, informal language. Be conversational and use a laid-back approach while still being respectful.",
-    formal: "highly structured, sophisticated language with proper etiquette. Use traditional business communication standards.",
-    enthusiastic: "energetic, positive, and motivating language. Show genuine excitement and optimism in your response."
-  };
-  
-  let prompt = `You are a professional email writing expert. Generate a perfectly formatted email reply that follows these specifications:
+  let prompt = `You are an AI assistant helping to write email replies. Please generate a ${tone.toUpperCase()} email reply to the following email content.
 
-🎯 TONE REQUIREMENTS:
-- Write in a ${tone.toUpperCase()} tone using ${toneGuidelines[tone] || toneGuidelines.professional}
-- Ensure every sentence reflects the ${tone} communication style
-- Match the energy level appropriate for "${tone}" communication
+IMPORTANT TONE REQUIREMENTS:
+- Use a ${tone} tone throughout the entire response
+- Match the writing style that fits "${tone}" perfectly
+- Make sure the language and approach reflects a ${tone} manner
 
-📧 EMAIL STRUCTURE REQUIREMENTS:
-1. Start with an appropriate greeting (Hi, Hello, Dear, etc.) based on the tone
-2. Acknowledge the original message appropriately
-3. Provide a clear, well-organized response to the main points
-4. Use proper paragraph breaks for readability
-5. End with an appropriate closing (Best regards, Thanks, Cheers, etc.) based on tone
-6. DO NOT include subject lines, email signatures, or sender information
+FORMATTING GUIDELINES:
+- Keep the response concise and relevant
+- Don't include subject lines or email headers
+- Don't include sender/recipient information
+- Focus only on the reply content
+- Be helpful and appropriate for the context
 
-✨ QUALITY STANDARDS:
-- Write in perfect English with proper grammar and punctuation
-- Use clear, concise sentences that are easy to understand
-- Address all key points from the original email
-- Maintain consistency in tone throughout
-- Make the response helpful and actionable
-- Keep appropriate length (not too brief, not too lengthy)
-
-${customInstructions ? `🔧 SPECIAL INSTRUCTIONS:
+${customInstructions ? `CUSTOM INSTRUCTIONS:
 ${customInstructions}
 
-Important: Follow these custom instructions while maintaining the ${tone} tone and email structure requirements.
+Follow these custom instructions carefully while maintaining the ${tone} tone.
 
 ` : ''}
 
-📨 ORIGINAL EMAIL TO RESPOND TO:
-"${emailContent}"
+ORIGINAL EMAIL TO RESPOND TO:
+${emailContent}
 
-Now generate a well-structured, ${tone} email reply following all the above requirements:`;
+Generate a ${tone} email reply now:`;
 
   return prompt;
 }
