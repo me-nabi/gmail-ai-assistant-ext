@@ -84,17 +84,7 @@ A fully self-contained Chrome extension that provides AI-powered auto-reply func
 - **No Data Collection**: Extension doesn't collect or transmit personal data
 - **Minimal Permissions**: Only requests necessary permissions for Gmail integration
 
-## 🎯 Comparison with Previous Versions
 
-| Feature | Java Backend Version | React Web App | **New Chrome Extension** |
-|---------|---------------------|---------------|-------------------------|
-| Backend Required | ✅ Spring Boot | ✅ Spring Boot | ❌ **No Backend** |
-| Setup Complexity | High | Medium | **Low** |
-| Gmail Integration | External | External | **Native** |
-| Offline Capable | ❌ | ❌ | **✅ (after setup)** |
-| Installation | Multiple steps | Multiple steps | **One-click install** |
-| Auto-detection | Manual | Manual | **Automatic** |
-| Updates | Manual restart | Manual restart | **Auto-update** |
 
 ## 🛠️ Development
 
